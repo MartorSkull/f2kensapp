@@ -1,4 +1,13 @@
 {
   "name": "f2kens",
-  "displayName": "f2kens"
+  "displayName": "f2kens",
+  "providerConfig":{
+    "authorizeUrl": "http://localhost:8000/o/authorize/",
+    "tokenUrl": "http://localhost:8000/o/token/",
+    "client_id": "RXqk6S4qW6HxZ2M6aQxcjMHsuX14fxdToBuYpK8Z",
+    "client_secret": "U3YSV0gpOiAkVCOqOzt73t6azRnD43YNEtaPDnZCLFETBbuTJX4O2hrdWlCMC2qIvJq5xocFY0GDVWdkTVlR9AAfbn43Xj5sL2eN4qL4VuR8nVeMl3onlbqTWYx2PlHi"
+  },
+  "ApiConfig": {
+    "url": "http://localhost:8000/"
+  }
 }
