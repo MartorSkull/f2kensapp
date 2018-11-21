@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">f2kens</string>
+    <string name="app_name">F2kens</string>
+    <string name="default_notification_channel_id">f2s</string>
 </resources>

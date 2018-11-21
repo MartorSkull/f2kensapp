@@ -2,58 +2,91 @@
 
 import React, {Component} from 'react';
 import {StyleSheet, Text, View, WebView, Linking} from 'react-native';
+
+import CookieManager from 'react-native-cookies';
+import firebase from 'react-native-firebase';
+
 import {Main} from "./components/Main";
-import {providerConfig} from "./app.json";
+import Initialization from "./components/qrshow"
+import {providerConfig, ApiConfig} from "./app.json";
 import url2dict, {dict2url} from './utils/urlHandler';
-import {encode as btoa} from 'base-64';
+import Logger from './utils/loggerDebug';
+
+global.appStages = {
+  LOADING:0,
+  ERROR:1,
+  REGISTERING:2,  
+  LOGGED_IN:3,
+}
 
 type Props = {};
 export default class App extends Component<Props> {
 
-  url = {uri: providerConfig.authorizeUrl+"?client_id="+providerConfig.client_id+"&state=random_state_string&response_type=code"}
+  constructor(props){
+    super(props);
+    this.token = global.tokenHandler
 
-  componentDidMount() {
-  Linking.addEventListener('url', this._handleOpenURL);
-  }
+    this.state={
+      stage:global.appStages.LOADING
+    };
 
-  componentWillUnmount() {
-    Linking.removeEventListener('url', this._handleOpenURL);
-  }
-
-  _handleOpenURL(event) {
-    var getData = url2dict(event.url);
-    var resp = fetch(
-      providerConfig.tokenUrl,
-      {
-        method: 'POST',
-        body: dict2url({
-          'code': getData['code'],
-          'redirect_uri': "f2kens://token",
-          'grant_type': "authorization_code"
-        }),
-        headers: {
-          'Authorization': "Basic " + btoa(providerConfig.client_id + ":" + providerConfig.client_secret),
-          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
-        }
-      }
-    )
-    .then((data) => {
-      return data.json()
+    this.token.init()
+    .then((value) => {
+        this.checkStage(value);
     })
   }
 
+  async checkStage(resp){
+    if(resp){
+      if (this.token.status == global.apiStat.LOGGED){
+        this.setState({stage:global.appStages.LOGGED_IN});
+      } else {
+        var token = await firebase.messaging().getToken()
+        if (token) {
+          await this.token.registerDevice(token);
+          this.setState({stage:global.appStages.REGISTERING});
+        }
+      }
+    } else {
+      this.setState({stage:global.appStages.ERROR})
+    }
+  }
+
+  componentDidMount() {
+    this.onTokenRefreshListener = firebase.messaging().onTokenRefresh(fcmToken => {
+      this.token.registerDevice(fcmToken) //TODO: make a update token function
+    });
+  }
+
+  componentWillUnmount() {
+    this.onTokenRefreshListener();
+  }
+
+
   render() {
-    return (
-      <WebView 
-        source={this.url}
-        javaScriptEnabled={false}
-        onNavigationStateChange={(navState) => console.log(navState)}
-        startInLoadingState={true}
-        automaticallyAdjustContentInsets={false}
-      />
-    );
-    // return (
-    //     <Main/>
-    // );
+    if (this.state.stage == global.appStages.LOGGED_IN){
+      return (
+        <Main/>
+      );
+    }
+    if (this.state.stage == global.appStages.REGISTERING){
+      return (
+        <Initialization parent={this}/>
+      );
+    }
+    if (this.state.stage == global.appStages.ERROR){
+      return (
+        <View>
+          <Text>{this.state.stage}</Text>
+        </View>
+      );
+    }
+    if (this.state.stage == global.appStages.LOADING){
+      return (
+        <View>
+          <Text>{this.state.stage}</Text>
+        </View>
+      );
+    }
   }
 }

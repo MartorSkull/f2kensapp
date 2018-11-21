@@ -8,6 +8,9 @@
     "client_secret": "U3YSV0gpOiAkVCOqOzt73t6azRnD43YNEtaPDnZCLFETBbuTJX4O2hrdWlCMC2qIvJq5xocFY0GDVWdkTVlR9AAfbn43Xj5sL2eN4qL4VuR8nVeMl3onlbqTWYx2PlHi"
   },
   "ApiConfig": {
-    "url": "http://localhost:8000/"
+    "url": "http://localhost:8000/f2kens/"
+  },
+  "LoggerConfig": {
+    "mode": "Debug"
   }
 }

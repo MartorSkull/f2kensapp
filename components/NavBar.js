@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
-export class NavBar extends Component {
+export default class NavBar extends Component {
   render() {
     return (
       <View style={styles.container}>

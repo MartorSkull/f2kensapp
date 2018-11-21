@@ -2,22 +2,73 @@
 
 import React, {Component} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import autoBind from 'auto-bind';
+import {ApiConfig} from "../app.json";
 import {SendButton} from './SendButton';
+import Logger from '../utils/loggerDebug';
 
 export class F2card extends Component {
+  constructor(props) {
+    super(props);
+    autoBind(this)
+    this.token = global.tokenHandler;
+    this.id = props.id;
+
+    this.getData();
+
+    this.state = {
+      title: "",
+      reason: "",
+      time: "",
+      state: "En espera"
+    };
+  }
+
+  getData(){
+    fetch(ApiConfig.url + "f2/"+this.id,
+    {
+      headers: this.token.genHeader()
+    })
+      .then((resp) => {
+        return resp.json()
+      })
+      .then((json) => {
+        this.setState({
+          title: json.student.first_name+" "+json.student.last_name,
+          reason: json.motivo,
+          time: json.time,
+          state: json.state
+        })
+      })
+  }
+
+  cardStyle(){
+    var color = "#F5F5F5"
+    if (this.state.state=="Rechazado"){
+      color = "#F56969"
+    } else if (this.state.state=="Aprobado"){
+      color = "#78F562"
+    }
+    return({
+        margin: 10,
+        borderRadius: 5,
+        backgroundColor: color
+    });
+  }
+
   render() {
     return (
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{this.props.title}</Text>
+      <View style={this.cardStyle()}>
+        <Text style={styles.cardTitle}>{this.state.title}</Text>
         <View style={styles.row}>
-          <Text style={styles.reason}>{this.props.children}</Text>
+          <Text style={styles.reason}>{this.state.reason}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.time}>Hora de salida: {this.props.time}</Text>
+          <Text style={styles.time}>Hora de salida: {this.state.time}</Text>
         </View>
         <View style={styles.row}>
-          <SendButton style={styles.button} type="accept" id="10"/>
-          <SendButton style={styles.button} type="reject" id="10"/>
+          <SendButton parent={this} style={styles.button} type="accept" id={this.id} status={this.state.state}/>
+          <SendButton parent={this} style={styles.button} type="reject" id={this.id} status={this.state.state}/>
         </View>
       </View>
     );
@@ -25,12 +76,6 @@ export class F2card extends Component {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#F5F5F5",
-//    backgroundColor: "#FF00FF",
-    margin: 10,
-    borderRadius: 5
-  },
   row: {
     display: 'flex',
     flexWrap: 'wrap',
