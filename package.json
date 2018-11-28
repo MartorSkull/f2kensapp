@@ -15,7 +15,9 @@
     "react-native-cookies": "^3.3.0",
     "react-native-firebase": "^5.1.0",
     "react-native-keychain": "^3.0.0",
+    "react-native-lock-screen": "0.0.21",
     "react-native-qrcode": "^0.2.7",
+    "react-native-vector-icons": "^6.1.0",
     "requirejs": "^2.3.6",
     "scheduler": "^0.11.2"
   },

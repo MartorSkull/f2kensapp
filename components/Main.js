@@ -1,7 +1,7 @@
 'use strict';
 
 import React, {Component} from 'react';
-import {StyleSheet, Text, View, ScrollView} from 'react-native';
+import {StyleSheet, Text, View, ScrollView, AppState} from 'react-native';
 import autoBind from 'auto-bind';
 import firebase from 'react-native-firebase'
 
@@ -30,15 +30,25 @@ export class Main extends Component {
 
   async loadF2s(resp) {
     this.setState({"f2s": await resp.json()})
-    Logger.log(this.state);
   }
 
   componentDidMount(){
-    this.messageListener = firebase.messaging().onMessage(async (message: RemoteMessage) => {
-      message.data.student = JSON.parse(message.data.student)
-      this.state.f2s.push(message.data);
+    this.notificationListener = firebase.notifications().onNotification((notification: Notification) => {
+      notification.data.student = JSON.parse(notification.data.student)
+      this.state.f2s.push(notification.data);
       this.setState(this.state);
     });
+    this.notificationOpenedListener = firebase.notifications().onNotificationOpened((notificationOpen: NotificationOpen) => {
+      var newF2 = notificationOpen.notification.data;
+      newF2.data.student = JSON.parse(newF2.data.student);
+      this.state.f2s.push(newF2);
+      this.setState(this.state);
+    })
+  }
+
+  componentWillUnmount(){
+    this.notificationListener();
+    this.notificationOpenedListener();
   }
 
   render() {

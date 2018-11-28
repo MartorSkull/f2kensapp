@@ -58,7 +58,8 @@ const styles = StyleSheet.create({
   },
   instructions: {
     marginBottom:10,
-    fontSize:20
+    fontSize:20,
+    textAlign: "center"
   },
   center:{
     flex:1,

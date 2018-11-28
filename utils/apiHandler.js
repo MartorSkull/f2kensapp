@@ -134,7 +134,6 @@ export default class tokenHandler{
     resp = await resp.json()
 
     if(resp["status"]){
-      Logger.log("WTF")
       this.fcmStatus={
         deviceId: Number(resp['device']),
         token:token}
@@ -144,6 +143,7 @@ export default class tokenHandler{
     }
     return this.fcmStatus.deviceId
   }
+
 }
 
 export async function _request(url,method="GET",urlattr={}, body={},headers={}){
