@@ -9,11 +9,11 @@ import NavBar from './NavBar';
 import {F2card} from './F2cards';
 import {ApiConfig} from "../app.json";
 import Logger from "../utils/loggerDebug";
+import ComponentAddOn from '../utils/customComponent'
 
 export class Main extends Component {
   constructor(props){
     super(props);
-    autoBind(this);
     this.token = global.tokenHandler
     this.state={
       'f2s':[]

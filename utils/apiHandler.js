@@ -14,7 +14,8 @@ global.apiStat = {
   NO_CONNECTION:1,
   KEYSTORE_ERROR:2,
   NOT_LOGGED:3,
-  LOGGED:4
+  NO_PIN:4,
+  LOGGED:5
 }
 
 export default class tokenHandler{
@@ -25,6 +26,10 @@ export default class tokenHandler{
       'accessToken':'',
       'refreshToken':'',
       'state':false
+    }
+    this.localStatus = {
+      hash: '',
+      state:false
     }
     this.fcmStatus = {
       deviceId: null,
@@ -43,6 +48,15 @@ export default class tokenHandler{
       this.status = apiStat.KEYSTORE_ERROR
       return(false);
     }
+    if(!await this.loadPin()){
+      Logger.Log("Keystore Error")
+      this.status = apiStat.KEYSTORE_ERROR
+      return(false);
+    }
+    if(!await this.checkPin()){
+      this.status = apiStat.NO_PIN
+      return(true)
+    }
     if(!await this.checkCred()){
       this.status = apiStat.NOT_LOGGED
     } else {
@@ -59,7 +73,7 @@ export default class tokenHandler{
 
   async loadCred(){
     try {
-      const credentials = await Keychain.getGenericPassword();
+      const credentials = await Keychain.getInternetCredentials(ApiConfig.url);
       if (credentials) {
         this.credStatus = {
           'state': true,
@@ -76,26 +90,73 @@ export default class tokenHandler{
     }
   }
 
+  async loadPin(){
+    try {
+      const credentials = await Keychain.getGenericPassword();
+      if (credentials) {
+        this.localStatus = {
+          state:true,
+          'hash': credentials['password']
+        }
+      } else {
+        Logger.log("No password");
+      }
+      return(true);
+    } catch (err) {
+        Logger.error("Error loading token: \n"+err);
+        return(false);
+    }
+  }
+
   async saveCred(accessToken, refreshToken){
     try {
-      await Keychain.setGenericPassword(
+      await Keychain.setInternetCredentials(
+        ApiConfig.url,
         refreshToken,
         accessToken
       );
       await this.loadCred()
+      return(true)
       } catch (err) {
         Logger.error("Error saving token: \n"+err);
         return(false);
     }
   }
 
+  async savePin(hash){
+    try{
+      await Keychain.setGenericPassword(
+        "None",
+        hash
+      );
+      await this.loadPin();
+      return(true);
+    } catch (err) {
+      Logger.error("Error Saving password: \n"+err)
+      return(false)
+    }
+  }
+
   async resetCred(){
     try {
-      await Keychain.resetGenericPassword();
+      await Keychain.resetInternetCredentials(ApiConfig.url);
       this.credStatus = {
         'accessToken': '',
         'refreshToken': '',
         'state': false
+      };
+      return(true);
+    } catch (err) {
+      return(false)
+    }
+  }
+
+  async resetPin(){
+    try {
+      await Keychain.resetGenericPassword();
+      this.localStatus = {
+        'hash': '',
+        state:false
       };
       return(true);
     } catch (err) {
@@ -118,6 +179,13 @@ export default class tokenHandler{
     return obj
   }
 
+  async checkPin(){
+    if (!this.localStatus.state){
+      return(false)
+    }
+    return(true)
+  }
+
   genHeader(){
     let headers = {
       "Authorization": 'Bearer '+this.credStatus.accessToken,
@@ -135,9 +203,6 @@ export default class tokenHandler{
 
     if(resp["status"]){
       this.fcmStatus={
-        deviceId: Number(resp['device']),
-        token:token}
-      global.fcmStatus={
         deviceId: Number(resp['device']),
         token:token}
     }

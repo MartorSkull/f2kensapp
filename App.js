@@ -20,7 +20,9 @@ import Initialization from "./components/qrshow"
 import {providerConfig, ApiConfig} from "./app.json";
 import url2dict, {dict2url} from './utils/urlHandler';
 import Logger from './utils/loggerDebug';
+import ComponentAddOn from './utils/customComponent';
 import Err from './components/error';
+import Lockscreen from './components/lock';
 
 global.appStages = {
   LOADING:0,
@@ -35,17 +37,14 @@ const plataformSpecific = Platform.select({
   android: {loaderSize: 60}
 });
 
-type Props = {};
-export default class App extends Component<Props> {
+export default class App extends ComponentAddOn {
 
   constructor(props){
     super(props);
-    autoBind(this);
-
     this.token = global.tokenHandler
-
     this.state={
-      stage:global.appStages.LOADING
+      stage:global.appStages.LOADING,
+      appState: AppState.currentState
     };
 
     this.init();
@@ -53,9 +52,7 @@ export default class App extends Component<Props> {
 
   init(){
     if (this.state.stage != global.appStages.LOADING)
-    this.setState({
-      stage:global.appStages.LOADING
-    })
+    this.setStateValue('stage', global.appStages.LOADING)
 
     this.token.init()
     .then((value) => {
@@ -66,28 +63,36 @@ export default class App extends Component<Props> {
   async checkStage(resp){
     if(resp){
       if (this.token.status == global.apiStat.LOGGED){
-        this.setState({stage:global.appStages.LOGGED_IN});
+        this.setStateValue('stage', global.appStages.LOCKED);
       } else {
         var token = await firebase.messaging().getToken()
         if (token) {
           await this.token.registerDevice(token);
-          this.setState({stage:global.appStages.REGISTERING});
+          this.setStateValue('stage', global.appStages.REGISTERING);
         }
       }
     } else {
-      this.setState({stage:global.appStages.ERROR})
+      this.setStateValue('stage', global.appStages.ERROR)
     }
+  }
+
+  lock(nextAppState){
+    if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
+      this.setStateValue("stage", global.appStages.LOCKED)
+    }
+    this.setStateValue('appState', nextAppState);
   }
 
   componentDidMount() {
     this.onTokenRefreshListener = firebase.messaging().onTokenRefresh(fcmToken => {
       this.token.registerDevice(fcmToken);
     });
+    AppState.addEventListener('change', this.lock)
   }
 
   componentWillUnmount() {
     this.onTokenRefreshListener();
-    
+    AppState.removeEventListener('change', this.lock) 
   }
 
 
@@ -95,6 +100,11 @@ export default class App extends Component<Props> {
     if (this.state.stage == global.appStages.LOGGED_IN){
       return (
         <Main/>
+      );
+    }
+    if (this.state.stage == global.appStages.LOCKED){
+      return (
+        <Lockscreen parent={this}/>//
       );
     }
     if (this.state.stage == global.appStages.REGISTERING){
