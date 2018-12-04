@@ -66,7 +66,6 @@ export default class Initialization extends ComponentAddOn {
         <View style={styles.container}>
           <NavBar title={"Registro"}/>
           <View style={styles.center}>
-            <Text style={styles.number}>{this.state.status-1}</Text>
             <Text style={styles.instructions}>
             Porfavor muestre este codigo al preceptor
             </Text>
